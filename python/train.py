@@ -7,13 +7,15 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization
+from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization, Activation
 from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.optimizers import Adam, SGD
 from losses import categorical_focal_loss
-from metrics import f1_m, precision_m, recall_m
+from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
 from sklearn.metrics import confusion_matrix, classification_report
+from utils import get_class_weights
+from tensorflow_addons.metrics import F1Score
 
 
 negative_data_path = "../data/AE_data/EQS_files/"
@@ -52,7 +54,7 @@ X_orig = X_orig[filter1_]
 Y_orig = Y_orig[filter1_]
 
 # remove redundant classes
-filter_ = (Y_orig != "Ukjent") & (~pd.isnull(Y_orig))
+filter_ = (Y_orig != "Ukjent") & (Y_orig != "Mindre alvorlig konsekvens") & (Y_orig != "Betydelig skade") & (Y_orig != "Uventet dødsfall") & (~pd.isnull(Y_orig))
 X_orig = X_orig[filter_]
 Y_orig = Y_orig[filter_]
 
@@ -68,11 +70,25 @@ X = np.asarray(X_orig)
 
 ### Preprocess
 
+token_m = "counter"  # {"hashing", "counter", "tfidf", "keras"}
+
 # extract features using simple word count
-vectorizer = HashingVectorizer(n_features=4000)  # CountVectorizer(max_features=5000) #HashingVectorizer(n_features=5000) # #TfidfVectorizer(max_features=5000)
-#vectorizer = CountVectorizer(max_features=1000)
-#vectorizer = TfidfVectorizer(max_features=5000)
-X = vectorizer.fit_transform(X)
+if token_m == "hashing":
+    vectorizer = HashingVectorizer(n_features=5000, lowercase=True, strip_accents="unicode", analyzer="word")  # CountVectorizer(max_features=5000) #HashingVectorizer(n_features=5000) # #TfidfVectorizer(max_features=5000)
+    X = vectorizer.fit_transform(X)
+elif token_m == "counter":
+    vectorizer = CountVectorizer(max_features=10000, min_df=1, ngram_range=(1, 1), lowercase=True, strip_accents="unicode", analyzer="word")
+    X = vectorizer.fit_transform(X)
+    X = X.toarray()
+elif token_m == "tfidf":
+    vectorizer = TfidfVectorizer(max_features=50000)
+    X = vectorizer.fit_transform(X)
+    X = X.toarray()
+elif token_m == "keras":
+    pass
+else:
+    print("Invalid tokenizer was chosen. Please choose one of these alternatives: '{hashing, counter, tfid, keras}'")
+    exit()
 
 nb_classes = len(np.unique(Y))
 nb_feats = X.shape[1]
@@ -85,6 +101,8 @@ print(class_weights)
 print(np.histogram(Y_before))
 
 class_weights = {i: w for i, w in enumerate(class_weights)}
+
+#class_weights = get_class_weights(Y)
 
 #class_weight = {0: 10, 1: 1, 2: 1, 3: 5, 4: 10}
 
@@ -121,20 +139,40 @@ print(len(Y_train), len(Y_val), len(Y_test))
 
 # model
 inputs = Input(shape=(nb_feats,))
-x = Dense(16, activation="relu")(inputs)  # x
-#x = BatchNormalization()(x)
+x = Dense(30)(inputs)  # x
+x = BatchNormalization()(x)
 x = Dropout(0.5)(x)
+x = Activation("relu")(x)
+#x = Dense(10, activation="relu")(inputs)
+#x = BatchNormalization()(x)
+#x = Dropout(0.5)(x)
+#x = Activation("relu")(x)
 x = Dense(nb_classes, activation="softmax")(x)
 model = Model(inputs=inputs, outputs=x)
+
+# keras deep embedding instead of preprocessing?
+'''
+embedding_dim = 50
+vocab_size =
+
+model = Sequential()
+model.add(Embedding(input_dim=vocab_size,
+                    output_dim=embedding_dim,
+                    input_length=maxlen))
+model.add(GlobalMaxPool1D())
+model.add(Dense(10, activation='relu'))
+model.add(Dense(1, activation='softmax'))
+'''
 
 print(model.summary())
 
 # compile
 model.compile(
-    #loss="categorical_crossentropy",
-    loss=categorical_focal_loss(gamma=3.0, alpha=0.25),
-    optimizer=Adam(lr=1e-3),
-    metrics=["acc", f1_m, precision_m, recall_m]
+    loss="categorical_crossentropy",
+    #loss=categorical_focal_loss(gamma=3.0, alpha=0.25),
+    optimizer=Adam(lr=1e-4),
+    weighted_metrics=["acc", f1_m, precision_m, recall_m],
+    metrics=[F1Score(nb_classes, average="macro")],
 )
 
 # saving best model
@@ -143,6 +181,14 @@ mcp_save = ModelCheckpoint(
     save_best_only=True,
     monitor='val_loss',
     mode='auto',
+    verbose=1,
+)
+
+# early stopping
+early = EarlyStopping(
+    monitor='val_loss',
+    patience=20,
+    verbose=1,
 )
 
 # fit
@@ -150,10 +196,11 @@ model.fit(
     X_train,
     Y_train,
     validation_data=(X_val, Y_val),
-    epochs=50,
-    batch_size=128,
+    epochs=100,
+    batch_size=64,
     class_weight=class_weights,
-    verbose=1
+    verbose=1,
+    callbacks=[early, mcp_save]
 )
 
 # evaluate model
