@@ -19,11 +19,16 @@ from sklearn.metrics import confusion_matrix, classification_report
 from tensorflow_addons.metrics import F1Score
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
-sys.path.append(os.path.abspath("../utils/"))
+print(sys.path)
+sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
+print(sys.path)
 from utils import get_class_weights, get_model_topics, get_inference, unique_str, to_categories
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
 
+
+print(sys.argv[1])
+exit()
 
 # PARAMS
 n_min_note_length = 30
@@ -35,6 +40,17 @@ n_min_words = 5
 n_max_words = 20
 n_remove_samples_end = 2
 stop_words = ["pasient", "pasienter", "pasienten"]  # None
+
+n_wc_top_words = 20
+n_wc_plot_horz = 4
+
+alg = "randomized"
+lower_flag = True
+
+n_jobs = -1
+verbose = 1
+
+tol = 0.0
 
 # set seed for session
 n_seed = 42
@@ -91,11 +107,11 @@ print(np.histogram(sepsis, 2))
 
 unique_ids = unique_str(ids, remove_nan=True)
 
-for id_ in unique_ids:
-    tmp = annotated_raw[ids == id_]["manuelt_merket_Infeksjonsrelatert"]
-    print(tmp)
+#for id_ in unique_ids:
+#    tmp = annotated_raw[ids == id_]["manuelt_merket_Infeksjonsrelatert"]
+#    print(tmp)
 
-exit()
+#exit()
 
 unique_annotated_raw_notes = unique_str(annotated_raw_notes, remove_nan=True)
 
@@ -105,22 +121,15 @@ unique_annotated_raw_notes = unique_str(annotated_raw_notes, remove_nan=True)
 corpus = np.asarray(data_raw_notes)
 np.random.shuffle(corpus)
 
-print(corpus)
-print(len(corpus))
+#print(corpus)
+#print(len(corpus))
 new = []
 for x in corpus:
-    # print(x)
-    print(x)
-    # if len(x) < 10:
-    #   print(x)
-    #   exit()
     if isinstance(x, str):
         if (x != "Se vedlegg") and (len(x) > n_min_note_length):
             new.append(x)
     else:
         print(np.isnan(x))
-    print("\n")
-    print("#" * 50)
 
 corpus = new.copy()
 del new
@@ -148,20 +157,30 @@ pattern = r'\b\w{' + re.escape(str(n_min_words)) + ',' + re.escape(str(n_max_wor
 print(pattern)
 
 # tokenizers
-tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=stop_words, ngram_range=(1, 2),
-                                lowercase=True, strip_accents="unicode", analyzer="word",
-                                token_pattern=pattern)
+if token == "count":
+    tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=stop_words, ngram_range=n_grams,
+                                    lowercase=lower_flag, strip_accents="unicode", analyzer="word",
+                                    token_pattern=pattern)
+elif token == "tfidf":
+    tf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=stop_words, ngram_range=(1, 2),
+                                   lowercase=lower_flag, strip_accents="unicode", analyzer="word",
+                                   token_pattern=pattern)
+else:
+    print("Unknown tokenizer was defined.")
+    exit()
 tf_out = tf_vectorizer.fit_transform(corpus)
 
-tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=stop_words, ngram_range=(1, 2),
-                                   lowercase=True, strip_accents="unicode", analyzer="word",
-                                   token_pattern=pattern)
-tfidf_out = tfidf_vectorizer.fit_transform(corpus)  # r'\b\w{1,n}\b'
 
 # LDA
-print("Performing LDA: ")
-lda_model = LatentDirichletAllocation(n_components=n_components, random_state=n_seed, verbose=1,
-                                      n_jobs=-1, max_iter=n_iter).fit(tf_out)
+if method == "LDA":
+    print("Performing LDA: ")
+    model = LatentDirichletAllocation(n_components=n_components, random_state=n_seed, verbose=verbose,
+                                          n_jobs=n_jobs, max_iter=n_iter).fit(tf_out)
+elif method == "LSA":
+    model = TruncatedSVD(n_components=n_components, random_state=n_seed, algorithm=alg)
+else:
+    print("Unknown topic analysis method was defined.")
+    exit()
 
 
 '''
@@ -209,8 +228,6 @@ vocab = tf_vectorizer.get_feature_names()
 
 words = {}
 freqs = {}
-n_top_words = 20
-n_plot_horz = 4
 
 for topic, component in enumerate(lda_model.components_):
 
