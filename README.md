@@ -2,7 +2,7 @@
 # adverse-events
 [![license](https://img.shields.io/github/license/DAVFoundation/captain-n3m0.svg?style=flat-square)](https://github.com/DAVFoundation/captain-n3m0/blob/master/LICENSE)
 
-This repository contains code for building machine learning methods for extracting information from free text.
+This repository contains code for building machine learning models for extracting information from adverse events notes.
 
 ### Usage:
 
