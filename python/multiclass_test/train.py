@@ -1,3 +1,5 @@
+import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,18 +13,21 @@ from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization, A
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.optimizers import Adam, SGD
+from sklearn.metrics import confusion_matrix, classification_report
+from tensorflow_addons.metrics import F1Score
+# import importlib
+
+sys.path.append(os.path.abspath("../utils/"))
+from utils import get_class_weights
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
-from sklearn.metrics import confusion_matrix, classification_report
-from utils import get_class_weights
-from tensorflow_addons.metrics import F1Score
 
 
-negative_data_path = "../data/AE_data/EQS_files/"
-positive_data_path = "../data/AE_data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
-save_model_path = "../output/models/"
-history_path = "../output/history/"
-datasets_path = "../output/datasets/"
+negative_data_path = "../../data/AE_data/EQS_files/"
+positive_data_path = "../../data/AE_data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
+save_model_path = "../../output/models/"
+history_path = "../../output/history/"
+datasets_path = "../../output/datasets/"
 
 data = pd.read_csv(positive_data_path)
 # Preview the first 5 lines of the loaded data
