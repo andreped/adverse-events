@@ -19,16 +19,13 @@ source venv/bin/activate
 pip install -r /path/to/requirements.txt
 ```
 
-3) Create the project structure as defined [below](https://github.com/andreped/adverse-events#project-structure)
+3) Create the project structure as defined [below](https://github.com/andreped/adverse-events#project-structure):
 
-4) Run scripts for training and evaluations different NLP models
+4) Run scripts for training and evaluations different NLP models:
 ```
-python3 python/multiclass/train.py
+python3 main.py misc/default-params.ini
 ```
-or
-```
-python3 python/topic_analysis/train.py
-```
+Different parameters relevant for the analysis, building of models, evaluation, plotting results, and similar, may be modified in the .ini-file.
 
 ### Project structure
 
