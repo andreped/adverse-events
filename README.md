@@ -2,9 +2,7 @@
 # adverse-events
 [![license](https://img.shields.io/github/license/DAVFoundation/captain-n3m0.svg?style=flat-square)](https://github.com/DAVFoundation/captain-n3m0/blob/master/LICENSE)
 
-This repository contains code for 
-
-
+This repository contains code for building machine learning methods for extracting information from free text.
 
 ### Usage:
 
@@ -21,7 +19,7 @@ source venv/bin/activate
 pip install -r /path/to/requirements.txt
 ```
 
-3) Create the project structure as defined below
+3) Create the project structure as defined [below](https://github.com/andreped/adverse-events#project-structure)
 
 4) Run scripts for training and evaluations different NLP models
 ```
@@ -69,6 +67,7 @@ python3 python/topic_analysis/train.py
 |   |   |   +--- preprocessed_dataset1.h5
 |   |   |   +--- preprocessed_dataset2.h5
 |   |   |   +--- [...]
+```
 
 ------
 
