@@ -18,19 +18,24 @@ from tensorflow.keras.optimizers import Adam, SGD
 from sklearn.metrics import confusion_matrix, classification_report
 from tensorflow_addons.metrics import F1Score
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+import configparser
 
 print(sys.path)
 sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
+# sys.path.append(os.path.abspath(os.getcwd() + "../"))
 print(sys.path)
 from utils import get_class_weights, get_model_topics, get_inference, unique_str, to_categories
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
 
+config = configparser.ConfigParser()
+config.read(sys.argv[1])
 
 print(sys.argv[1])
-exit()
+# exit()
 
 # PARAMS
+'''
 n_min_note_length = 30
 n_features = 2000
 # n_components = 4
@@ -55,19 +60,23 @@ tol = 0.0
 # set seed for session
 n_seed = 42
 np.random.seed(n_seed)
+'''
 
+n_seed = int(config["Analysis"]["n_seed"])
 
-raw_data_path = "../../data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
-annotated_data_path = "../../data/AE_annotated_Labeled_Hel_and_Manual_20210604.csv"
-save_model_path = "../../output/models/"
-history_path = "../../output/history/"
-datasets_path = "../../output/datasets/"
+# print(os.listdir("."))
+
+raw_data_path = os.getcwd() + "/../data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
+annotated_data_path = os.getcwd() + "/../data/AE_annotated_Labeled_Hel_and_Manual_20210604.csv"
+save_model_path = os.getcwd() + "/../output/models/"
+history_path = os.getcwd() + "/../output/history/"
+datasets_path = os.getcwd() + "/../output/datasets/"
 
 data_raw = pd.read_csv(raw_data_path)
 annotated_raw = pd.read_csv(annotated_data_path)
 
 # remove nan-initialized samples from annotated data
-annotated_raw = annotated_raw[:-n_remove_samples_end]
+annotated_raw = annotated_raw[:-int(config["Preprocessing"]["n_remove_samples_end"])]
 
 print(data_raw.head())
 print(annotated_raw.head())
@@ -126,7 +135,7 @@ np.random.shuffle(corpus)
 new = []
 for x in corpus:
     if isinstance(x, str):
-        if (x != "Se vedlegg") and (len(x) > n_min_note_length):
+        if (x != "Se vedlegg") and (len(x) > int(config["Preprocessing"]["n_min_note_length"])):
             new.append(x)
     else:
         print(np.isnan(x))
@@ -153,17 +162,18 @@ lda_topics = ["woman.birth", "admission", "person.fallen", "disease.infection", 
 
 n_components = len(lda_topics)
 
-pattern = r'\b\w{' + re.escape(str(n_min_words)) + ',' + re.escape(str(n_max_words)) + r'}\b'
+pattern = r'\b\w{' + re.escape(str(int(config["Preprocessing"]["n_min_words"]))) + ',' + re.escape(str(int(config["Preprocessing"]["n_max_words"]))) + r'}\b'
 print(pattern)
 
 # tokenizers
+token = config["Tokenizer"]["token"]
 if token == "count":
-    tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=stop_words, ngram_range=n_grams,
-                                    lowercase=lower_flag, strip_accents="unicode", analyzer="word",
+    tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=int(config["Tokenizer"]["n_features"]), stop_words=tuple(config["Tokenizer"]["stop_words"]), ngram_range=tuple([int(x) for x in config["Tokenizer"]["n_grams"].split(",")]),
+                                    lowercase=eval(config["Tokenizer"]["lower_flag"]), strip_accents="unicode", analyzer="word",
                                     token_pattern=pattern)
 elif token == "tfidf":
-    tf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=stop_words, ngram_range=(1, 2),
-                                   lowercase=lower_flag, strip_accents="unicode", analyzer="word",
+    tf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=int(config["Tokenizer"]["n_features"]), stop_words=tuple(config["Tokenizer"]["stop_words"]), ngram_range=tuple([int(x) for x in config["Tokenizer"]["n_grams"].split(",")]),
+                                   lowercase=eval(config["Tokenizer"]["lower_flag"]), strip_accents="unicode", analyzer="word",
                                    token_pattern=pattern)
 else:
     print("Unknown tokenizer was defined.")
@@ -172,12 +182,13 @@ tf_out = tf_vectorizer.fit_transform(corpus)
 
 
 # LDA
+method = config["Topic analysis"]["method"]
 if method == "LDA":
     print("Performing LDA: ")
-    model = LatentDirichletAllocation(n_components=n_components, random_state=n_seed, verbose=verbose,
-                                          n_jobs=n_jobs, max_iter=n_iter).fit(tf_out)
+    model = LatentDirichletAllocation(n_components=n_components, random_state=n_seed, verbose=eval(config["LDA"]["verbose"]),
+                                          n_jobs=int(config["LDA"]["n_jobs"]), max_iter=int(config["Topic analysis"]["n_iter"])).fit(tf_out)
 elif method == "LSA":
-    model = TruncatedSVD(n_components=n_components, random_state=n_seed, algorithm=alg)
+    model = TruncatedSVD(n_components=n_components, random_state=eval(config["Analysis"]["n_seed"]), algorithm=config["SVD"]["alg"])
 else:
     print("Unknown topic analysis method was defined.")
     exit()
@@ -205,10 +216,10 @@ preds = {key: [] for key in lda_topics}
 for text in unique_annotated_raw_notes:
     #print("\nCurrent line: ")
     #print(text)
-    topic, score, _ = get_inference(lda_model, tf_vectorizer, lda_topics, text, 0)
+    topic, score, _ = get_inference(model, tf_vectorizer, lda_topics, text, 0)
     #print(topic, score)
     preds[topic].append(text)
-print(get_model_topics(lda_model, tf_vectorizer, lda_topics, n_top_words))
+print(get_model_topics(model, tf_vectorizer, lda_topics, int(config["Word cloud"]["n_top_words"])))
 #'''
 
 '''
@@ -229,15 +240,16 @@ vocab = tf_vectorizer.get_feature_names()
 words = {}
 freqs = {}
 
-for topic, component in enumerate(lda_model.components_):
+for topic, component in enumerate(model.components_):
 
     # need [::-1] to sort the array in descending order
-    indices = np.argsort(component)[::-1][:n_top_words]
+    indices = np.argsort(component)[::-1][:int(config["Word cloud"]["n_top_words"])]
 
     # store the words most relevant to the topic
     words[topic] = {vocab[i]: component[i] for i in indices}
 
 # lower max_font_size, change the maximum number of word and lighten the background:
+n_plot_horz = int(config["Word cloud"]["n_wc_plot_horz"])
 fig, ax = plt.subplots(int(np.ceil(n_components / n_plot_horz)), n_plot_horz)
 plt.tight_layout()
 for i, (key, value) in enumerate(words.items()):

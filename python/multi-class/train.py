@@ -15,19 +15,22 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.optimizers import Adam, SGD
 from sklearn.metrics import confusion_matrix, classification_report
 from tensorflow_addons.metrics import F1Score
+import configparser
 # import importlib
 
-sys.path.append(os.path.abspath("../utils/"))
+sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
 from utils import get_class_weights
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
 
+config = configparser.ConfigParser()
+config.read(sys.argv[1])
 
-negative_data_path = "../../data/AE_data/EQS_files/"
-positive_data_path = "../../data/AE_data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
-save_model_path = "../../output/models/"
-history_path = "../../output/history/"
-datasets_path = "../../output/datasets/"
+negative_data_path = os.path.abspath(os.getcwd() + "/../data/AE_data/EQS_files/")
+positive_data_path = os.path.abspath(os.getcwd() + "/../data/AE_data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv")
+save_model_path = os.path.abspath("../../output/models/")
+history_path = os.path.abspath("../../output/history/")
+datasets_path = os.path.abspath("../../output/datasets/")
 
 data = pd.read_csv(positive_data_path)
 # Preview the first 5 lines of the loaded data
