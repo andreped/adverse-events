@@ -158,8 +158,8 @@ for i, c in enumerate(corpus):
 #exit()
 
 # topics of relevance for Latent Direchlet Allocation (LDA)
-lda_topics = ["woman.birth", "admission", "person.fallen", "disease.infection", "device.failure", "misc", "redundant", "redness"]  # , "redundant", "Misc"]
-
+#lda_topics = ["woman.birth", "admission", "person.fallen", "disease.infection", "device.failure", "misc", "redundant", "redness"]  # , "redundant", "Misc"]
+lda_topics = list(range(int(config["Topic analysis"]["n_components"])))
 n_components = len(lda_topics)
 
 pattern = r'\b\w{' + re.escape(str(int(config["Preprocessing"]["n_min_words"]))) + ',' + re.escape(str(int(config["Preprocessing"]["n_max_words"]))) + r'}\b'
