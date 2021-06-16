@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.metrics import classification_report, precision_recall_fscore_support
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization, Activation
 from tensorflow.keras.models import Model
@@ -19,6 +20,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 from tensorflow_addons.metrics import F1Score
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 import configparser
+import scipy
 
 print(sys.path)
 sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
@@ -106,23 +108,43 @@ catheters = to_categories(catheters)
 sepsis = to_categories(sepsis)
 pvks = to_categories(pvks)
 
-print(np.histogram(infections, 2))
-print(np.histogram(device_failures, 2))
-print(np.histogram(fallens, 2))
-print(np.histogram(mistake_unit, 2))
-print(np.histogram(catheters, 2))
-print(np.histogram(sepsis, 2))
-print(np.histogram(sepsis, 2))
-
 unique_ids = unique_str(ids, remove_nan=True)
-
-#for id_ in unique_ids:
-#    tmp = annotated_raw[ids == id_]["manuelt_merket_Infeksjonsrelatert"]
-#    print(tmp)
-
-#exit()
-
 unique_annotated_raw_notes = unique_str(annotated_raw_notes, remove_nan=True)
+
+unique_infections = []
+unique_fallens = []
+unique_device_failures = []
+unique_mistake_unit = []
+unique_catheters = []
+unique_sepsis = []
+unique_pvks = []
+for note in unique_annotated_raw_notes:
+    tmp = np.array(annotated_raw_notes) == note
+    tmp2 = infections[tmp]
+    unique_infections.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = fallens[tmp]
+    unique_fallens.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = device_failures[tmp]
+    unique_device_failures.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = mistake_unit[tmp]
+    unique_mistake_unit.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = catheters[tmp]
+    unique_catheters.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = sepsis[tmp]
+    unique_sepsis.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = pvks[tmp]
+    unique_pvks.append(scipy.stats.mode(tmp2)[0][0])
+
+print("Counts for the tasks {infections, fallens, device_failures, mistake_unit, catheters, sepsis, pvks}:")
+print(np.unique(unique_infections), np.bincount(unique_infections))
+print(np.unique(unique_fallens), np.bincount(unique_fallens))
+print(np.unique(unique_device_failures), np.bincount(unique_device_failures))
+print(np.unique(unique_mistake_unit), np.bincount(unique_mistake_unit))
+print(np.unique(unique_catheters), np.bincount(unique_catheters))
+print(np.unique(unique_sepsis), np.bincount(unique_sepsis))
+print(np.unique(unique_pvks), np.bincount(unique_pvks))
+
+# exit()
 
 # preprocess: 1) remove or substitute/impute sensitive data based on removing unique words/elements in notes
 
@@ -201,11 +223,11 @@ preds = {key: [] for key in lda_topics}
 for text in corpus:
     #print("\nCurrent line: ")
     #print(text)
-    topic, score, _ = get_inference(lda_model, tf_vectorizer, lda_topics, text, 0)
+    topic, score, _ = get_inference(model, tf_vectorizer, lda_topics, text, 0)
     #print(topic, score)
     preds[topic].append(text)
 
-print(get_model_topics(lda_model, tf_vectorizer, lda_topics, n_top_words))
+# print(get_model_topics(model, tf_vectorizer, lda_topics, int(config["Word cloud"]["n_top_words"])))
 '''
 
 #'''
@@ -219,8 +241,9 @@ for text in unique_annotated_raw_notes:
     topic, score, _ = get_inference(model, tf_vectorizer, lda_topics, text, 0)
     #print(topic, score)
     preds[topic].append(text)
-print(get_model_topics(model, tf_vectorizer, lda_topics, int(config["Word cloud"]["n_top_words"])))
 #'''
+
+print(get_model_topics(model, tf_vectorizer, lda_topics, int(config["Word cloud"]["n_top_words"])))
 
 '''
 for key in list(preds.keys()):
@@ -234,35 +257,97 @@ for key in list(preds.keys()):
 # https://stackoverflow.com/questions/60790721/topic-modeling-run-lda-in-sklearn-how-to-compute-the-wordcloud
 # https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html#wordcloud.WordCloud
 
-# define vocabulary to get words names
-vocab = tf_vectorizer.get_feature_names()
+if eval(config["Word cloud"]["perform"]):
+    print("Producing word clouds...")
 
-words = {}
-freqs = {}
+    # define vocabulary to get words names
+    vocab = tf_vectorizer.get_feature_names()
+    words = {}
+    freqs = {}
+    for topic, component in enumerate(model.components_):
+        
+        # need [::-1] to sort the array in descending order
+        indices = np.argsort(component)[::-1][:int(config["Word cloud"]["n_top_words"])]
+        
+        # store the words most relevant to the topic
+        words[topic] = {vocab[i]: component[i] for i in indices}
 
-for topic, component in enumerate(model.components_):
-
-    # need [::-1] to sort the array in descending order
-    indices = np.argsort(component)[::-1][:int(config["Word cloud"]["n_top_words"])]
-
-    # store the words most relevant to the topic
-    words[topic] = {vocab[i]: component[i] for i in indices}
-
-# lower max_font_size, change the maximum number of word and lighten the background:
-n_plot_horz = int(config["Word cloud"]["n_wc_plot_horz"])
-fig, ax = plt.subplots(int(np.ceil(n_components / n_plot_horz)), n_plot_horz)
-plt.tight_layout()
-for i, (key, value) in enumerate(words.items()):
-    wordcloud = WordCloud(max_font_size=50, max_words=100, background_color="white").generate_from_frequencies(value)
-    ax[int(i / n_plot_horz), int(i % n_plot_horz)].imshow(wordcloud, interpolation="bilinear")
-    ax[int(i / n_plot_horz), int(i % n_plot_horz)].axis("off")
-plt.show()
-
+    # lower max_font_size, change the maximum number of word and lighten the background:
+    n_plot_horz = int(config["Word cloud"]["n_wc_plot_horz"])
+    fig, ax = plt.subplots(int(np.ceil(n_components / n_plot_horz)), n_plot_horz)
+    plt.tight_layout()
+    for i, (key, value) in enumerate(words.items()):
+        wordcloud = WordCloud(max_font_size=50, max_words=100, background_color="white").generate_from_frequencies(value)
+        ax[int(i / n_plot_horz), int(i % n_plot_horz)].imshow(wordcloud, interpolation="bilinear")
+        ax[int(i / n_plot_horz), int(i % n_plot_horz)].axis("off")
+    plt.show()
 
 ## evaluate the unsupervised LDA model for classification based on a selection of cases
+#print(infections)
 
+preds = {key: [] for key in lda_topics}
+topic_preds = []
+for text in unique_annotated_raw_notes:
+    text = text.replace("Hele_Notater", " ")
+    text = text.replace("\n", " ")
+    topic, score, _ = get_inference(model, tf_vectorizer, lda_topics, text, 0)
+    #preds[topic].append(text)
+    topic_preds.append(topic)
+    
+#print(len(unique_annotated_raw_notes))
 
+#exit()
 
+#print(topic_preds)
+#print(len(unique_annotated_raw_notes))
 
+out = []
+for top, inf in zip(topic_preds, unique_infections):
+    out.append([top, inf])
+
+print()
+print("Predicted topic vs infection topics:")
+print(out)
+
+out_fallens = []
+for top, fal in zip(topic_preds, unique_fallens):
+    out_fallens.append([top, fal])
+
+print()
+print("Predicted topic vs fallen topics:")
+print(out_fallens)
+
+out_device = []
+for top, dev in zip(topic_preds, unique_device_failures):
+    out_device.append([top, dev])
+
+print()
+print("Predicted topic vs device_failure topics:")
+print(out_device)
+
+print()
+print(len(unique_infections), len(unique_fallens), len(unique_device_failures))
+print(len(out_device))
+#print()
+#print(infections)
+
+## check which topic that best represents the different classes
+# start with infection
+topic_preds = np.array(topic_preds)
+
+nb_components = int(config["Topic analysis"]["n_components"])
+
+accs = []
+for top in range(nb_components):
+    tmp = np.array(topic_preds == top).astype(int)
+    
+    ret = classification_report(unique_fallens, tmp, labels=[0, 1])
+    ret = precision_recall_fscore_support(unique_fallens, tmp, labels=[0, 1], average='macro')
+    print(ret)
+    accs.append(ret[2])
+    #iaccs.append(np.sum(unique_fallens == tmp))
+
+print(accs)
+print("Highest f1-score for the fallen task: ", np.max(accs))
 
 
