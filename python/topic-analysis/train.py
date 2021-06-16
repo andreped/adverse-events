@@ -29,6 +29,7 @@ print(sys.path)
 from utils import get_class_weights, get_model_topics, get_inference, unique_str, to_categories
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
+from stats import BCa_interval_macro_metric
 
 config = configparser.ConfigParser()
 config.read(sys.argv[1])
@@ -337,17 +338,82 @@ topic_preds = np.array(topic_preds)
 
 nb_components = int(config["Topic analysis"]["n_components"])
 
-accs = []
+accs = {"infections": [], "fallens": [], "device_failures": [], "pvks": [], "catheters": []}
+origs = {key: [] for key in list(accs.keys())}
 for top in range(nb_components):
     tmp = np.array(topic_preds == top).astype(int)
-    
-    ret = classification_report(unique_fallens, tmp, labels=[0, 1])
+    #ret = classification_report(unique_fallens, tmp, labels=[0, 1])
+    ret = precision_recall_fscore_support(unique_infections, tmp, labels=[0, 1], average='macro')
+    accs["infections"].append(ret[2])
+    origs["infections"].append([unique_infections, tmp])
+
     ret = precision_recall_fscore_support(unique_fallens, tmp, labels=[0, 1], average='macro')
-    print(ret)
-    accs.append(ret[2])
+    accs["fallens"].append(ret[2])
+    origs["fallens"].append([unique_fallens, tmp])
+
+    ret = precision_recall_fscore_support(unique_device_failures, tmp, labels=[0, 1], average='macro')
+    accs["device_failures"].append(ret[2])
+    origs["device_failures"].append([unique_device_failures, tmp])
+
+    ret = precision_recall_fscore_support(unique_pvks, tmp, labels=[0, 1], average='macro')
+    accs["pvks"].append(ret[2])
+
+    ret = precision_recall_fscore_support(unique_catheters, tmp, labels=[0, 1], average='macro')
+    accs["catheters"].append(ret[2])
     #iaccs.append(np.sum(unique_fallens == tmp))
 
-print(accs)
-print("Highest f1-score for the fallen task: ", np.max(accs))
+keys_ = list(accs.keys())
 
+print(accs)
+print("Highest f1-score for the individual tasks " + str(keys_) + ": ")
+print([(key, max(accs[key])) for key in keys_])
+
+
+def some_func(x, labels=[0, 1]):
+    '''
+    #print("input x:")
+    #print(x)
+    #print(x.shape)
+    ret = []
+    for l in labels:
+        #print(x[:, 1])
+        #print(x[:, 1] == 1)
+        ret.append(np.mean(x[x[:, 1] == l, l]))
+    # return np.mean(x)
+    return np.mean(ret)
+    '''
+
+    ret = precision_recall_fscore_support(x[:, 0], x[:, 1], labels=labels, average='macro', zero_division=0)
+    return ret[2]
+
+
+print("---")
+res = {key: [] for key in keys_}
+for key in keys_:
+    tmp = accs[key]
+    orig_ = origs[key]
+    max_ = max(tmp)
+    
+    if len(orig_) == 0:
+        continue
+    new = orig_[np.argmax(tmp)]
+    print()
+    print("key: ", key)
+    # print(orig_)
+    # print(max_)
+    # print(new)
+
+    # acc_vals = np.array(new[0] == new[1]).astype(int)
+    
+    tmp = np.stack([new[0], new[1]], axis=1)
+    ci, theta_boot_mean = BCa_interval_macro_metric(tmp, func=some_func, B=10000)
+
+    #print(theta_boot_mean)
+    print(max_, ci)
+    #res[key] = (max_, "with CI: ", max_ - 1.96 * )
+
+#bs = IIDBootstrap()
+#ci = bs.conf_int(sharpe_ratio, 1000, method='bca')
+
+print("\nFinished!")
 

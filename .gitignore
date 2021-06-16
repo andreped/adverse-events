@@ -3,4 +3,4 @@ output/
 data/
 .idea/
 python/venv/
-python/__pycache__/
+*__pycache__/
