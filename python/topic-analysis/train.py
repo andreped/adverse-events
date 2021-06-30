@@ -66,11 +66,13 @@ np.random.seed(n_seed)
 '''
 
 n_seed = int(config["Analysis"]["n_seed"])
+np.random.seed(n_seed)
 
 # print(os.listdir("."))
 
 raw_data_path = os.getcwd() + "/../data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
-annotated_data_path = os.getcwd() + "/../data/AE_annotated_Labeled_Hel_and_Manual_20210604.csv"
+#annotated_data_path = os.getcwd() + "/../data/AE_annotated_Labeled_Hel_and_Manual_20210604.csv"
+annotated_data_path = os.getcwd() + "/../data/AE_annotated_labeled_Hel_and_Manual_merged_category_20210617_115324.csv"
 save_model_path = os.getcwd() + "/../output/models/"
 history_path = os.getcwd() + "/../output/history/"
 datasets_path = os.getcwd() + "/../output/datasets/"
@@ -92,6 +94,13 @@ data_raw_notes = data_raw["Hendelsesbeskrivelse"]
 annotated_raw_notes = annotated_raw["content"]
 ids = annotated_raw["filename"]
 
+print()
+#print(list(data_raw.keys()))
+print(list(annotated_raw.keys()))
+
+# exit()
+
+
 # extract relevant GT from test data (manually labelled, at note-level)
 infections = annotated_raw["manuelt_merket_Infeksjonsrelatert"]
 device_failures = annotated_raw["manuelt_merket_Feil_pa_enheten"]
@@ -101,6 +110,8 @@ catheters = annotated_raw["Kateterrelatert"]
 sepsis = annotated_raw["Sepsis"]
 pvks = annotated_raw["PVK_relatert"]
 
+infections_merged = annotated_raw["merge_Infeksjonsrelatert"]
+
 infections = to_categories(infections)
 device_failures = to_categories(device_failures)
 fallens = to_categories(fallens)
@@ -108,6 +119,9 @@ mistake_unit = to_categories(mistake_unit)
 catheters = to_categories(catheters)
 sepsis = to_categories(sepsis)
 pvks = to_categories(pvks)
+
+infections_merged = to_categories(infections_merged)
+device_failures_merged = np.logical_or(device_failures, mistake_unit).astype(int)
 
 unique_ids = unique_str(ids, remove_nan=True)
 unique_annotated_raw_notes = unique_str(annotated_raw_notes, remove_nan=True)
@@ -119,6 +133,8 @@ unique_mistake_unit = []
 unique_catheters = []
 unique_sepsis = []
 unique_pvks = []
+unique_infections_merged = []
+unique_device_failures_merged = []
 for note in unique_annotated_raw_notes:
     tmp = np.array(annotated_raw_notes) == note
     tmp2 = infections[tmp]
@@ -135,8 +151,12 @@ for note in unique_annotated_raw_notes:
     unique_sepsis.append(scipy.stats.mode(tmp2)[0][0])
     tmp2 = pvks[tmp]
     unique_pvks.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = infections_merged[tmp]
+    unique_infections_merged.append(scipy.stats.mode(tmp2)[0][0])
+    tmp2 = device_failures_merged[tmp]
+    unique_device_failures_merged.append(scipy.stats.mode(tmp2)[0][0])
 
-print("Counts for the tasks {infections, fallens, device_failures, mistake_unit, catheters, sepsis, pvks}:")
+print("Counts for the tasks {infections, fallens, device_failures, mistake_unit, catheters, sepsis, pvks, infec_m, devic_m}:")
 print(np.unique(unique_infections), np.bincount(unique_infections))
 print(np.unique(unique_fallens), np.bincount(unique_fallens))
 print(np.unique(unique_device_failures), np.bincount(unique_device_failures))
@@ -144,6 +164,8 @@ print(np.unique(unique_mistake_unit), np.bincount(unique_mistake_unit))
 print(np.unique(unique_catheters), np.bincount(unique_catheters))
 print(np.unique(unique_sepsis), np.bincount(unique_sepsis))
 print(np.unique(unique_pvks), np.bincount(unique_pvks))
+print(np.unique(unique_infections_merged), np.bincount(unique_infections_merged))
+print(np.unique(unique_device_failures_merged), np.bincount(unique_device_failures_merged))
 
 # exit()
 
@@ -167,7 +189,7 @@ corpus = new.copy()
 del new
 
 # remove redundant topics (I'm lazy, hopefully my topic analysis model will handle this)
-removes = ["\n", "Hele_Notater"]
+removes = ["\n", "Hele_Notater"]  # , "pasienter", "pasienten", "pasient"]
 for i, c in enumerate(corpus):
     #print(i, c)
     for r in removes:
@@ -211,7 +233,7 @@ if method == "LDA":
     model = LatentDirichletAllocation(n_components=n_components, random_state=n_seed, verbose=eval(config["LDA"]["verbose"]),
                                           n_jobs=int(config["LDA"]["n_jobs"]), max_iter=int(config["Topic analysis"]["n_iter"])).fit(tf_out)
 elif method == "LSA":
-    model = TruncatedSVD(n_components=n_components, random_state=eval(config["Analysis"]["n_seed"]), algorithm=config["SVD"]["alg"])
+    model = TruncatedSVD(n_components=n_components, random_state=eval(config["Analysis"]["n_seed"]), algorithm=config["LSA"]["alg"]).fit(tf_out)
 else:
     print("Unknown topic analysis method was defined.")
     exit()
