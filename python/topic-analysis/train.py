@@ -94,9 +94,11 @@ data_raw_notes = data_raw["Hendelsesbeskrivelse"]
 annotated_raw_notes = annotated_raw["content"]
 ids = annotated_raw["filename"]
 
-print()
-#print(list(data_raw.keys()))
+print("\nraw data keys: ")
+print(list(data_raw.keys()))
+print("\nannotated data keys: ")
 print(list(annotated_raw.keys()))
+print()
 
 # exit()
 
