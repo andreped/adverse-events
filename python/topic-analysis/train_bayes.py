@@ -24,6 +24,7 @@ import scipy
 from skopt import BayesSearchCV, gp_minimize, dump
 from skopt.utils import use_named_args
 from skopt.space import Integer
+from skopt.callbacks import CheckpointSaver
 
 print(sys.path)
 sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
@@ -466,13 +467,24 @@ print(curr_task)
 print(n_calls)
 print(gp_verbose)
 
+# callback for saving results for each iteration (overwrites)
+checkpoint_saver = CheckpointSaver(history_path + "history_bayes_" + name + "_" + curr_task + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl", compress=9)
+
+search_space_names = [x.name for x in search_space]
+
 # perform optimization
 print("\n\n\nPerforming Bayesian optimization...\n\n\n")
-result = gp_minimize(evaluate_model, search_space, n_calls=n_calls, verbose=gp_verbose)
+result = gp_minimize(
+    evaluate_model, 
+    search_space, 
+    n_calls=n_calls, 
+    verbose=gp_verbose,
+    random_state=n_seed,
+    callback=[checkpoint_saver],
+)
 
-# save final result
-search_space_names = [x.name for x in search_space]
-dump(result, history_path + "history_bayes_" + name + "_" + curr_task + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl")
+# save final result (DEPRECATED! If CheckpointSaver is used, the model will be saved for each iteration. Hence, the model has already been saved.
+# dump(result, history_path + "history_bayes_" + name + "_" + curr_task + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl")
 
 # from skopt import load
 # res_loaded = load(history_path + "history_bayes_" + name + ".pkl")
