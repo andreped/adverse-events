@@ -451,9 +451,10 @@ def evaluate_model(**params):
     return 1 - value
     
 
-curr_task = "fallens"
-n_calls = 200
-gp_verbose = True
+
+curr_task = config["Bayes"]["curr_task"]  # "infections", "fallens", "device_failures"
+n_calls = int(config["Bayes"]["n_calls"])
+gp_verbose = eval(config["Bayes"]["gp_verbose"])
 
 
 # perform optimization
@@ -462,12 +463,12 @@ result = gp_minimize(evaluate_model, search_space, n_calls=n_calls, verbose=gp_v
 
 # save final result
 search_space_names = [x.name for x in search_space]
-dump(result, history_path + "history_bayes_" + name + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl")
+dump(result, history_path + "history_bayes_" + name + "_" + curr_task + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl")
 
 # from skopt import load
 # res_loaded = load(history_path + "history_bayes_" + name + ".pkl")
 
-print("\n Results:")
+print("\n Results from task: " curr_task + "\n")
 print(result)
 print()
 
