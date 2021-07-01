@@ -346,7 +346,8 @@ def evaluate_model(**params):
 
     #print(topic_preds)
     #print(len(unique_annotated_raw_notes))
-
+    
+    '''
     out = []
     for top, inf in zip(topic_preds, unique_infections):
         out.append([top, inf])
@@ -358,6 +359,7 @@ def evaluate_model(**params):
     out_device = []
     for top, dev in zip(topic_preds, unique_device_failures):
         out_device.append([top, dev])
+    '''
 
     #print()
     #print(infections)
@@ -387,9 +389,11 @@ def evaluate_model(**params):
 
         ret = precision_recall_fscore_support(unique_pvks, tmp, labels=[0, 1], average='macro')
         accs["pvks"].append(ret[2])
+        origs["pvks"].append([unique_pvks, tmp])
 
         ret = precision_recall_fscore_support(unique_catheters, tmp, labels=[0, 1], average='macro')
         accs["catheters"].append(ret[2])
+        origs["catheters"].append([unique_catheters, tmp])
         #iaccs.append(np.sum(unique_fallens == tmp))
 
     keys_ = list(accs.keys())
@@ -452,10 +456,15 @@ def evaluate_model(**params):
     
 
 
-curr_task = config["Bayes"]["curr_task"]  # "infections", "fallens", "device_failures"
+# PARAMS for Bayesian optimization (more details above function)
+curr_task = config["Bayes"]["curr_task"]  # "infections", "fallens", "device_failures", "pvks", "catheters"
 n_calls = int(config["Bayes"]["n_calls"])
 gp_verbose = eval(config["Bayes"]["gp_verbose"])
 
+print("\nINI PARAMS: ")
+print(curr_task)
+print(n_calls)
+print(gp_verbose)
 
 # perform optimization
 print("\n\n\nPerforming Bayesian optimization...\n\n\n")
@@ -468,7 +477,7 @@ dump(result, history_path + "history_bayes_" + name + "_" + curr_task + "_" + st
 # from skopt import load
 # res_loaded = load(history_path + "history_bayes_" + name + ".pkl")
 
-print("\n Results from task: " curr_task + "\n")
+print("\nResults from task: " + curr_task + "\n")
 print(result)
 print()
 
