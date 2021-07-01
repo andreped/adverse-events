@@ -21,6 +21,7 @@ from tensorflow_addons.metrics import F1Score
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 import configparser
 import scipy
+from skopt import BayesSearchCV
 
 print(sys.path)
 sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
@@ -30,45 +31,22 @@ from utils import get_class_weights, get_model_topics, get_inference, unique_str
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
 from stats import BCa_interval_macro_metric
+from datetime import datetime
 
+
+# today's date and time
+today = datetime.now()
+name = today.strftime("%d%m") + today.strftime("%Y")[2:] + "_" + today.strftime("%H%M%S") + "_topic-analysis"
+
+# parse config file (.ini)
 config = configparser.ConfigParser()
 config.read(sys.argv[1])
 
 print(sys.argv[1])
 # exit()
 
-# PARAMS
-'''
-n_min_note_length = 30
-n_features = 2000
-# n_components = 4
-n_top_words = 50
-n_iter = 30  # 30
-n_min_words = 5
-n_max_words = 20
-n_remove_samples_end = 2
-stop_words = ["pasient", "pasienter", "pasienten"]  # None
-
-n_wc_top_words = 20
-n_wc_plot_horz = 4
-
-alg = "randomized"
-lower_flag = True
-
-n_jobs = -1
-verbose = 1
-
-tol = 0.0
-
-# set seed for session
-n_seed = 42
-np.random.seed(n_seed)
-'''
-
 n_seed = int(config["Analysis"]["n_seed"])
 np.random.seed(n_seed)
-
-# print(os.listdir("."))
 
 raw_data_path = os.getcwd() + "/../data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv"
 #annotated_data_path = os.getcwd() + "/../data/AE_annotated_Labeled_Hel_and_Manual_20210604.csv"
@@ -101,6 +79,10 @@ print(list(annotated_raw.keys()))
 print()
 
 # exit()
+
+# define searrch space (relevant for Bayesian optimization)
+params = dict()
+
 
 
 # extract relevant GT from test data (manually labelled, at note-level)
@@ -225,7 +207,13 @@ elif token == "tfidf":
 else:
     print("Unknown tokenizer was defined.")
     exit()
-tf_out = tf_vectorizer.fit_transform(corpus)
+tf_model = tf_vectorizer.fit(corpus)
+tf_out = tf_model.transform(corpus)
+
+# tf_out = tf_vectorizer.fit_transform(corpus)
+
+
+# save 
 
 
 # LDA
@@ -394,19 +382,6 @@ print([(key, max(accs[key])) for key in keys_])
 
 
 def some_func(x, labels=[0, 1]):
-    '''
-    #print("input x:")
-    #print(x)
-    #print(x.shape)
-    ret = []
-    for l in labels:
-        #print(x[:, 1])
-        #print(x[:, 1] == 1)
-        ret.append(np.mean(x[x[:, 1] == l, l]))
-    # return np.mean(x)
-    return np.mean(ret)
-    '''
-
     ret = precision_recall_fscore_support(x[:, 0], x[:, 1], labels=labels, average='macro', zero_division=0)
     return ret[2]
 
