@@ -22,6 +22,7 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 import configparser
 import scipy
 from skopt import BayesSearchCV
+import pickle
 
 print(sys.path)
 sys.path.append(os.path.abspath(os.getcwd() + "/utils/"))
@@ -414,5 +415,12 @@ for key in keys_:
 #bs = IIDBootstrap()
 #ci = bs.conf_int(sharpe_ratio, 1000, method='bca')
 
+# finally, save produced LDA model on disk
+pickle.dump(model, save_model_path + "model_topic_" + name + ".pkl")
+
+# load model
+# model = pickle.load(save_model_path + "model_topic_" + name + ".pkl")
+
 print("\nFinished!")
+
 
