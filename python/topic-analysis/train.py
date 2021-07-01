@@ -415,8 +415,10 @@ for key in keys_:
 #bs = IIDBootstrap()
 #ci = bs.conf_int(sharpe_ratio, 1000, method='bca')
 
-# finally, save produced LDA model on disk
-pickle.dump(model, save_model_path + "model_topic_" + name + ".pkl")
+# finally, save trained models on disk to be easily deployable elsewhere
+if eval(config["Export"]["save_flag"]):
+    pickle.dump(tf_model, save_model_path + "model_topic_embedding_" + name + ".pk")
+    pickle.dump(model, save_model_path + "model_topic_classifier" + name + ".pk")
 
 # load model
 # model = pickle.load(save_model_path + "model_topic_" + name + ".pkl")
