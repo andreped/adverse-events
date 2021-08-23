@@ -1,7 +1,20 @@
+from __future__ import absolute_import
 from collections import Counter
 import pandas as pd
 import numpy as np
 import re
+from tqdm import tqdm
+from skopt.callbacks import TimerCallback
+
+
+# https://github.com/scikit-optimize/scikit-optimize/issues/674
+class TQDMCallback(object):
+    def __init__(self, **kwargs):
+        self._bar = tqdm(**kwargs)
+
+    def __call__(self, res):
+        self._bar.update()
+
 
 
 def get_class_weights(y):
