@@ -180,7 +180,6 @@ def evaluate_model(**params):
                 new.append(x)
         else:
             pass
-            # print(np.isnan(x))
     corpus = new.copy()
     del new
 
@@ -206,8 +205,7 @@ def evaluate_model(**params):
                                        lowercase=eval(config["Tokenizer"]["lower_flag"]), strip_accents="unicode", analyzer="word",
                                        token_pattern=pattern)
     else:
-        print("Unknown tokenizer was defined.")
-        exit()
+        raise ValueError("Unknown tokenizer was defined.")
 
     tf_model = tf_vectorizer.fit(corpus)
     tf_out = tf_model.transform(corpus)
@@ -223,8 +221,7 @@ def evaluate_model(**params):
     elif method == "LSA":
         model = TruncatedSVD(n_components=n_components, random_state=eval(config["Analysis"]["n_seed"]), algorithm=config["LSA"]["alg"]).fit(tf_out)
     else:
-        #print("Unknown topic analysis method was defined.")
-        exit()
+        raise ValueError("Unknown topic analysis method was defined")
 
     '''
     ### EVAL ON TRAIN
@@ -246,21 +243,11 @@ def evaluate_model(**params):
     # Display some predictions/results to interpret model performance
     preds = {key: [] for key in lda_topics}
     for text in unique_annotated_raw_notes:
-        #print("\nCurrent line: ")
-        #print(text)
         topic, score, _ = get_inference(model, tf_vectorizer, lda_topics, text, 0)
-        #print(topic, score)
         preds[topic].append(text)
     #'''
 
     # print(get_model_topics(model, tf_vectorizer, lda_topics, int(config["Word cloud"]["n_top_words"])))
-
-    '''
-    for key in list(preds.keys()):
-        print("Current key:", key)
-        print(preds[key])
-        print("\n" * 2)
-    '''
 
     ## plot word clouds for the different groups
     # https://www.datacamp.com/community/tutorials/wordcloud-python
@@ -268,19 +255,13 @@ def evaluate_model(**params):
     # https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html#wordcloud.WordCloud
 
     if eval(config["Word cloud"]["perform"]):
-        # print("Producing word clouds...")
-
         # define vocabulary to get words names
         vocab = tf_vectorizer.get_feature_names()
         words = {}
-        freqs = {}
+        # freqs = {}
         for topic, component in enumerate(model.components_):
-
-            # need [::-1] to sort the array in descending order
-            indices = np.argsort(component)[::-1][:int(config["Word cloud"]["n_top_words"])]
-
-            # store the words most relevant to the topic
-            words[topic] = {vocab[i]: component[i] for i in indices}
+            indices = np.argsort(component)[::-1][:int(config["Word cloud"]["n_top_words"])]  # need [::-1] to sort the array in descending order
+            words[topic] = {vocab[i]: component[i] for i in indices}  # store the words most relevant to the topic
 
         # lower max_font_size, change the maximum number of word and lighten the background:
         n_plot_horz = int(config["Word cloud"]["n_wc_plot_horz"])
@@ -293,46 +274,17 @@ def evaluate_model(**params):
         plt.show()
 
     ## evaluate the unsupervised LDA model for classification based on a selection of cases
-    #print(infections)
-
-    preds = {key: [] for key in lda_topics}
+    # preds = {key: [] for key in lda_topics}
     topic_preds = []
     for text in unique_annotated_raw_notes:
         text = text.replace("Hele_Notater", " ")
         text = text.replace("\n", " ")
         topic, score, _ = get_inference(model, tf_vectorizer, lda_topics, text, 0)
-        #preds[topic].append(text)
         topic_preds.append(topic)
-
-    #print(len(unique_annotated_raw_notes))
-
-    #exit()
-
-    #print(topic_preds)
-    #print(len(unique_annotated_raw_notes))
-
-    '''
-    out = []
-    for top, inf in zip(topic_preds, unique_infections):
-        out.append([top, inf])
-
-    out_fallens = []
-    for top, fal in zip(topic_preds, unique_fallens):
-        out_fallens.append([top, fal])
-
-    out_device = []
-    for top, dev in zip(topic_preds, unique_device_failures):
-        out_device.append([top, dev])
-    '''
-
-    #print()
-    #print(infections)
 
     ## check which topic that best represents the different classes
     # start with infection
     topic_preds = np.array(topic_preds)
-
-    # nb_components = int(config["Topic analysis"]["n_components"])
 
     accs = {"infections": [], "fallens": [], "device_failures": [], "pvks": [], "catheters": [], "infections_merged": [], "category_Infeksjon": [], "category_Enhet": []}
     origs = {key: [] for key in list(accs.keys())}
@@ -378,50 +330,26 @@ def evaluate_model(**params):
     # print("Highest f1-score for the individual tasks " + str(keys_) + ": ")
     # print([(key, max(accs[key])) for key in keys_])
 
-
-    def some_func(x, labels=[0, 1]):
-        ret = precision_recall_fscore_support(x[:, 0], x[:, 1], labels=labels, average='macro', zero_division=0)
-        return ret[2]
-
-
-    # print("---")
     res = {key: [] for key in keys_}
     for key in keys_:
         tmp = accs[key]
         orig_ = origs[key]
         max_ = max(tmp)
-
         if len(orig_) == 0:
             continue
         new = orig_[np.argmax(tmp)]
-        # print()
-        # print("key: ", key)
-        # print(orig_)
-        # print(max_)
-        # print(new)
 
         if eval_mode:
-            # acc_vals = np.array(new[0] == new[1]).astype(int)
-
             tmp = np.stack([new[0], new[1]], axis=1)
             ci, theta_boot_mean = BCa_interval_macro_metric(tmp, func=some_func, B=10000)
             res[key] = [max_, theta_boot_mean, ci]
         else:
-            #print(theta_boot_mean)
-            # print(max_, ci)
             res[key] = max_
-            #res[key] = (max_, "with CI: ", max_ - 1.96 * )
 
     if eval_mode:
         return res[curr_task]
     else:
-        #bs = IIDBootstrap()
-        #ci = bs.conf_int(sharpe_ratio, 1000, method='bca')
-
         value = res[curr_task]
-
-        #print()
-        #print("Current iter: ")
         params_ = params.copy()
         params_["F1"] = value
         str_ = ""
@@ -430,9 +358,6 @@ def evaluate_model(**params):
         str_ = str_[:-2]
         print()
         print(str_)
-        # print()
-        # print("Current F1: ", value)
-
         return 1 - value
 
 
@@ -443,7 +368,7 @@ n_calls = int(config["Bayes"]["n_calls"])
 gp_verbose = eval(config["Bayes"]["gp_verbose"])
 n_init_pts = int(config["Bayes"]["n_init_pts"])
 
-print("\nINI PARAMS: ")
+print("\nINI PARAMS:")
 print(curr_task)
 print(n_calls)
 print(gp_verbose)
