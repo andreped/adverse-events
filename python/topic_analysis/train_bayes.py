@@ -7,18 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer, HashingVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation, TruncatedSVD
-from sklearn.model_selection import train_test_split
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import classification_report, precision_recall_fscore_support
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization, Activation
-from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.optimizers import Adam, SGD
-from sklearn.metrics import confusion_matrix, classification_report
-from tensorflow_addons.metrics import F1Score
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 import configparser
 import scipy
@@ -26,19 +15,11 @@ from skopt import BayesSearchCV, gp_minimize, dump, load
 from skopt.utils import use_named_args
 from skopt.space import Integer
 from skopt.callbacks import CheckpointSaver
-import jsonpickle
 
-# print(sys.path)
+
 sys.path.append(os.path.realpath("./utils/"))
-# sys.path.append(os.path.abspath(os.getcwd() + "../"))
-
-# sys.path.append(os.path.join(".", os.path.dirname(__file__), "..", "utils"))
-
 sys.path.append(".")
 
-print()
-print(sys.path)
-# from .. import utils
 from utils import get_class_weights, get_model_topics, get_inference, unique_str, to_categories
 from losses import categorical_focal_loss
 from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
@@ -59,7 +40,6 @@ config = configparser.ConfigParser()
 config.read(sys.argv[1])
 
 print(sys.argv[1])
-# exit()
 
 n_seed = int(config["Analysis"]["n_seed"])
 np.random.seed(n_seed)
@@ -78,10 +58,6 @@ annotated_raw = pd.read_csv(annotated_data_path)
 # remove nan-initialized samples from annotated data
 annotated_raw = annotated_raw[:-int(config["Preprocessing"]["n_remove_samples_end"])]
 
-print(data_raw.head())
-print(annotated_raw.head())
-
-#exit()
 # extract relevant train data
 data_raw_title = data_raw["Tittel"]
 data_raw_notes = data_raw["Hendelsesbeskrivelse"]
@@ -90,14 +66,6 @@ data_raw_notes = data_raw["Hendelsesbeskrivelse"]
 annotated_raw_notes = annotated_raw["content"]
 ids = annotated_raw["filename"]
 
-print("\nraw data keys: ")
-print(list(data_raw.keys()))
-print("\nannotated data keys: ")
-print(list(annotated_raw.keys()))
-print()
-
-# exit()
-
 # define searrch space (relevant for Bayesian optimization)
 search_space = list()
 search_space.append(Integer(2, 100, name='K'))
@@ -105,7 +73,6 @@ search_space.append(Integer(1000, 10000, name='N'))
 search_space.append(Integer(1, 10, name='n_min'))
 search_space.append(Integer(11, 50, name='n_max'))
 search_space.append(Integer(15, 50, name='l_min'))
-
 
 # extract relevant GT from test data (manually labelled, at note-level)
 infections = annotated_raw["manuelt_merket_Infeksjonsrelatert"]
@@ -172,6 +139,7 @@ for note in unique_annotated_raw_notes:
     tmp2 = category_Enhet[tmp]
     unique_category_Enhet.append(scipy.stats.mode(tmp2)[0][0])
 
+'''
 print("Counts for the tasks {infections, fallens, device_failures, mistake_unit, catheters, sepsis, pvks, infec_m, devic_m}:")
 print(np.unique(unique_infections), np.bincount(unique_infections))
 print(np.unique(unique_fallens), np.bincount(unique_fallens))
@@ -184,10 +152,7 @@ print(np.unique(unique_infections_merged), np.bincount(unique_infections_merged)
 print(np.unique(unique_device_failures_merged), np.bincount(unique_device_failures_merged))
 print(np.unique(unique_category_Infeksjon), np.bincount(unique_category_Infeksjon))
 print(np.unique(unique_category_Enhet), np.bincount(unique_category_Enhet))
-
-# exit()
-
-# preprocess: 1) remove or substitute/impute sensitive data based on removing unique words/elements in notes
+'''
 
 # produce shuffled corpus for training models
 corpus = np.asarray(data_raw_notes)
@@ -196,7 +161,7 @@ np.random.shuffle(corpus)
 corpus_orig = corpus.copy()
 del corpus
 
-perform = config["Bayes"]["eval"]  # config["Analysis"]["perform"]
+eval_mode = config["Bayes"]["eval"]
 
 # define evaluation function to be used in Bayesian hyperparameter optimization
 @use_named_args(search_space)
@@ -435,7 +400,7 @@ def evaluate_model(**params):
         # print(max_)
         # print(new)
 
-        if perform:
+        if eval_mode:
             # acc_vals = np.array(new[0] == new[1]).astype(int)
 
             tmp = np.stack([new[0], new[1]], axis=1)
@@ -447,7 +412,7 @@ def evaluate_model(**params):
             res[key] = max_
             #res[key] = (max_, "with CI: ", max_ - 1.96 * )
 
-    if perform:
+    if eval_mode:
         return res[curr_task]
     else:
         #bs = IIDBootstrap()
@@ -494,36 +459,22 @@ if curr_eval:
     print()
     print(result.func_vals)
 
-    f1s = result.func_vals
-    f1s = f1s[:800]
-
+    # f1s = result.func_vals
+    # f1s = f1s[:800]
     f1s = 1 - result.func_vals
-
     top_ = max(f1s)
     pos_ = np.argwhere(f1s == top_)
 
     # now run prediction using data to generate CIs and whatnot
-    # evaluate_model()
-
-    print(search_space)
-    print()
     names = [x._name for x in search_space]
-
     best = result.x
-
-    print(names, best)
-
     optimal_params = {key: int(c) for key, c in zip(names, best)}
-
     print("Optimal params: ")
     print(optimal_params)
     ret = evaluate_model(best)
 
     print("final result: ")
     print(ret)
-
-
-    exit()
 
     fig, ax = plt.subplots(1, 1)
     ax.plot(f1s)
@@ -547,7 +498,8 @@ checkpoint_saver = CheckpointSaver(curr_path, compress=9)
 print("Checkpoint save path:", curr_path)
 
 # perform optimization
-print("\n\n\nPerforming Bayesian optimization...\n\n\n")
+print("#"*20)
+print("\nPerforming Bayesian optimization...\n")
 result = gp_minimize(
     evaluate_model,
     search_space,
@@ -570,6 +522,4 @@ print("\nResults from task: " + curr_task + "\n")
 print(result)
 print()
 print(res_loaded)
-
-print("\nFinished!")
 
