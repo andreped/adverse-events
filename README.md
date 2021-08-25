@@ -21,17 +21,11 @@ pip install -r /path/to/requirements.txt
 
 3) Create the project structure as defined [below](https://github.com/andreped/adverse-events#project-structure):
 
-4) Run scripts for training and evaluations different NLP models:
-```
-python3 main.py misc/default-params.ini
-```
-Different parameters relevant for the analysis, building of models, evaluation, plotting results, and similar, may be modified in the INI-file.
-
-### Experimental
-Use Bayesian optimization to find the model suitable hyperparameters for a given task. Settings for this can be set similarly as before using the INI-file.
+4) Run scripts for training and evaluating different classifier models:
 ```
 python3 main.py misc/test-bayes.ini
 ```
+Different parameters relevant for the analysis, building of models, evaluation, plotting results, and similar, may be modified in the INI-file.
 
 ### Project structure
 
