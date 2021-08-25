@@ -26,7 +26,6 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-
 # today's date and time
 today = datetime.now()
 name = today.strftime("%d%m") + today.strftime("%Y")[2:] + "_" + today.strftime("%H%M%S") + "_topic-analysis"
@@ -34,8 +33,6 @@ name = today.strftime("%d%m") + today.strftime("%Y")[2:] + "_" + today.strftime(
 # parse config file (.ini)
 config = configparser.ConfigParser()
 config.read(sys.argv[1])
-
-print(sys.argv[1])
 
 n_seed = int(config["Analysis"]["n_seed"])
 np.random.seed(n_seed)
@@ -162,7 +159,6 @@ eval_mode = config["Bayes"]["eval"]
 # define evaluation function to be used in Bayesian hyperparameter optimization
 @use_named_args(search_space)
 def evaluate_model(**params):
-
     n_components = params["K"]
     n_min_note_length = params["l_min"]
     n_min_words = params["n_min"]
@@ -172,14 +168,14 @@ def evaluate_model(**params):
     new = []
     for x in corpus_orig:
         if isinstance(x, str):
-            if (x != "Se vedlegg") and (len(x) > n_min_note_length):  # int(config["Preprocessing"]["n_min_note_length"])):
+            if (x != "Se vedlegg") and (len(x) > n_min_note_length):
                 new.append(x)
         else:
             pass
     corpus = new.copy()
     del new
 
-    # remove redundant topics (I'm lazy, hopefully my topic analysis model will handle this)
+    # remove redundant topics (rare words and numbers should be removed by the vectorizer)
     removes = ["\n", "Hele_Notater"]  # , "pasienter", "pasienten", "pasient"]
     for i, c in enumerate(corpus):
         for r in removes:
@@ -187,10 +183,8 @@ def evaluate_model(**params):
         c.strip()
         corpus[i] = c
 
-    # pattern for tokenizer
-    pattern = r'\b\w{' + re.escape(str(n_min_words)) + ',' + re.escape(str(n_max_words)) + r'}\b'
-
     # tokenizers
+    pattern = r'\b\w{' + re.escape(str(n_min_words)) + ',' + re.escape(str(n_max_words)) + r'}\b'  # pattern for tokenizer
     token = config["Tokenizer"]["token"]
     if token == "count":
         tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=n_features, stop_words=tuple(config["Tokenizer"]["stop_words"]), ngram_range=tuple([int(x) for x in config["Tokenizer"]["n_grams"].split(",")]),
@@ -249,7 +243,6 @@ def evaluate_model(**params):
     # https://www.datacamp.com/community/tutorials/wordcloud-python
     # https://stackoverflow.com/questions/60790721/topic-modeling-run-lda-in-sklearn-how-to-compute-the-wordcloud
     # https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html#wordcloud.WordCloud
-
     if eval_mode and eval(config["Word cloud"]["perform"]):
         # define vocabulary to get words names
         vocab = tf_vectorizer.get_feature_names()
@@ -295,12 +288,6 @@ def evaluate_model(**params):
         ret = precision_recall_fscore_support(unique_fallens, tmp, labels=[0, 1], average='macro')
         accs["fallens"].append(ret[2])
         origs["fallens"].append([unique_fallens, tmp])
-
-        print(topic_preds)
-        print(top)
-        print(tmp)
-        print(ret)
-        exit()
 
         ret = precision_recall_fscore_support(unique_device_failures, tmp, labels=[0, 1], average='macro')
         accs["device_failures"].append(ret[2])
@@ -351,9 +338,7 @@ def evaluate_model(**params):
             print('  %s' % ', '.join(words))
             print(comp_)
             print()
-
         exit()
-    exit()
 
     res = {key: [] for key in keys_}
     for key in keys_:
@@ -395,7 +380,7 @@ print(n_calls)
 print(gp_verbose)
 print(n_init_pts)
 
-# only load and print resilts. If True, then does not perform Bayesian hyperparamter optimization, but rather loads file
+# only load and print resilts. If True, then does not perform Bayesian hyperparameter optimization, but rather loads file
 curr_eval = config["Bayes"]["eval"]
 if curr_eval:
     print("#"*20)
@@ -456,14 +441,10 @@ result = gp_minimize(
     callback=[checkpoint_saver],  # , tqdm_skopt(total=n_calls, desc="Gaussian Process")],
 )
 
-# save final result (DEPRECATED! If CheckpointSaver is used, the model will be saved for each iteration. Hence, the model has already been saved.
-# dump(result, history_path + "history_bayes_" + name + "_" + curr_task + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl")
-
-# from skopt import load
+# finally, load result from disk and print
 curr_path = history_path + "history_bayes_" + name + "_" + curr_task + "_" + str(search_space_names).replace("'", "").replace(" ", "") + ".pkl"
 res_loaded = load(curr_path)
 print("History save path:", curr_path)
-
 print("\nResults from task: " + curr_task + "\n")
 print(result)
 print()
