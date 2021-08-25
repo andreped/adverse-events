@@ -369,26 +369,24 @@ def evaluate_model(**params):
 
 
 # PARAMS for Bayesian optimization (more details above function)
-curr_task = config["Bayes"]["curr_task"]  # "infections", "fallens", "device_failures", "pvks", "catheters", "infections_merged"
+curr_task = config["Bayes"]["curr_task"]
 n_calls = int(config["Bayes"]["n_calls"])
 gp_verbose = eval(config["Bayes"]["gp_verbose"])
 n_init_pts = int(config["Bayes"]["n_init_pts"])
 
-print("\nINI PARAMS:")
+print("INI PARAMS:")
 print(curr_task)
 print(n_calls)
 print(gp_verbose)
 print(n_init_pts)
 
-# only load and print resilts. If True, then does not perform Bayesian hyperparameter optimization, but rather loads file
+# if eval mode is enabled, only load and print results stored on disk (no Bayesian optimization)
 curr_eval = config["Bayes"]["eval"]
 if curr_eval:
     print("#"*20)
-    print("\nEVAL\n")
+    print("EVAL")
     result = load(history_path + curr_eval)
     print(result)
-    print()
-    print(result.func_vals)
 
     # f1s = result.func_vals
     # f1s = f1s[:800]
@@ -430,7 +428,7 @@ print("Checkpoint save path:", curr_path)
 
 # perform optimization
 print("#"*20)
-print("\nPerforming Bayesian optimization...\n")
+print("BAYESIAN OPTIMIZATION")
 result = gp_minimize(
     evaluate_model,
     search_space,
