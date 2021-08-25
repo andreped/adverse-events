@@ -16,13 +16,9 @@ from skopt.utils import use_named_args
 from skopt.space import Integer
 from skopt.callbacks import CheckpointSaver
 
-
 sys.path.append(os.path.realpath("./utils/"))
 sys.path.append(".")
-
-from utils import get_class_weights, get_model_topics, get_inference, unique_str, to_categories
-from losses import categorical_focal_loss
-from metrics import f1_m, precision_m, recall_m, fbeta_score_macro
+from utils import get_class_weights, get_model_topics, get_inference, unique_str, to_categories, get_f1
 from stats import BCa_interval_macro_metric
 from datetime import datetime
 
@@ -254,7 +250,7 @@ def evaluate_model(**params):
     # https://stackoverflow.com/questions/60790721/topic-modeling-run-lda-in-sklearn-how-to-compute-the-wordcloud
     # https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html#wordcloud.WordCloud
 
-    if eval(config["Word cloud"]["perform"]):
+    if eval_mode and eval(config["Word cloud"]["perform"]):
         # define vocabulary to get words names
         vocab = tf_vectorizer.get_feature_names()
         words = {}
@@ -286,11 +282,12 @@ def evaluate_model(**params):
     # start with infection
     topic_preds = np.array(topic_preds)
 
-    accs = {"infections": [], "fallens": [], "device_failures": [], "pvks": [], "catheters": [], "infections_merged": [], "category_Infeksjon": [], "category_Enhet": []}
+    accs = {"infections": [], "fallens": [], "device_failures": [], "pvks": [], "catheters": [],
+            "infections_merged": [], "category_Infeksjon": [], "category_Enhet": []}
     origs = {key: [] for key in list(accs.keys())}
     for top in range(n_components):
         tmp = np.array(topic_preds == top).astype(int)
-        #ret = classification_report(unique_fallens, tmp, labels=[0, 1])
+
         ret = precision_recall_fscore_support(unique_infections, tmp, labels=[0, 1], average='macro')
         accs["infections"].append(ret[2])
         origs["infections"].append([unique_infections, tmp])
@@ -298,6 +295,12 @@ def evaluate_model(**params):
         ret = precision_recall_fscore_support(unique_fallens, tmp, labels=[0, 1], average='macro')
         accs["fallens"].append(ret[2])
         origs["fallens"].append([unique_fallens, tmp])
+
+        print(topic_preds)
+        print(top)
+        print(tmp)
+        print(ret)
+        exit()
 
         ret = precision_recall_fscore_support(unique_device_failures, tmp, labels=[0, 1], average='macro')
         accs["device_failures"].append(ret[2])
@@ -330,6 +333,28 @@ def evaluate_model(**params):
     # print("Highest f1-score for the individual tasks " + str(keys_) + ": ")
     # print([(key, max(accs[key])) for key in keys_])
 
+    # get the top k words for the topic of interest
+    if eval_mode and eval(config["Topic analysis"]["show_importance"]):
+        topic_words = {}
+        n_top_words = 20
+        vocab = tf_vectorizer.get_feature_names()
+        importance = {}
+
+        # https://stackoverflow.com/questions/44208501/getting-topic-word-distribution-from-lda-in-scikit-learn
+        for topic, comp in enumerate(model.components_):
+            word_idx = np.argsort(comp)[::-1][:n_top_words]
+            topic_words[topic] = [vocab[i] for i in word_idx]
+            importance[topic] = np.sort(comp)[::-1][:n_top_words]
+
+        for (topic, words), (topic, comp_) in zip(topic_words.items(), importance.items()):
+            print('Topic: %d' % topic)
+            print('  %s' % ', '.join(words))
+            print(comp_)
+            print()
+
+        exit()
+    exit()
+
     res = {key: [] for key in keys_}
     for key in keys_:
         tmp = accs[key]
@@ -337,15 +362,13 @@ def evaluate_model(**params):
         max_ = max(tmp)
         if len(orig_) == 0:
             continue
-        new = orig_[np.argmax(tmp)]
-
         if eval_mode:
+            new = orig_[np.argmax(tmp)]
             tmp = np.stack([new[0], new[1]], axis=1)
-            ci, theta_boot_mean = BCa_interval_macro_metric(tmp, func=some_func, B=10000)
+            ci, theta_boot_mean = BCa_interval_macro_metric(tmp, func=lambda x_: get_f1(x_, labels=[0, 1]), B=10000)
             res[key] = [max_, theta_boot_mean, ci]
         else:
             res[key] = max_
-
     if eval_mode:
         return res[curr_task]
     else:
@@ -355,11 +378,9 @@ def evaluate_model(**params):
         str_ = ""
         for key in list(params_.keys()):
             str_ += key + ": " + str(params_[key]) + ", "
-        str_ = str_[:-2]
         print()
-        print(str_)
+        print(str_[:-2])
         return 1 - value
-
 
 
 # PARAMS for Bayesian optimization (more details above function)
@@ -394,23 +415,23 @@ if curr_eval:
     names = [x._name for x in search_space]
     best = result.x
     optimal_params = {key: int(c) for key, c in zip(names, best)}
-    print("Optimal params: ")
-    print(optimal_params)
     ret = evaluate_model(best)
 
+    print("Optimal params: ")
+    print(optimal_params)
     print("final result: ")
     print(ret)
 
-    fig, ax = plt.subplots(1, 1)
-    ax.plot(f1s)
-    ax.scatter(pos_, [top_ for x in range(len(pos_))], c="r", marker="x")
-    ax.grid("on")
-    ax.legend(["Best F1: " + str(np.round(top_, 4))], loc="lower right")
-    fig.tight_layout()
-    fig.savefig(figures_path + "figure_f1history_" + curr_eval.split("history_")[-1].split(".pkl")[0] + ".png", dpi=300)
-
-    if eval(config["Bayes"]["show_figure"]):
-        plt.show()
+    if eval(config["Bayes"]["make_figure"]):
+        fig, ax = plt.subplots(1, 1)
+        ax.plot(f1s)
+        ax.scatter(pos_, [top_ for x in range(len(pos_))], c="r", marker="x")
+        ax.grid("on")
+        ax.legend(["Best F1: " + str(np.round(top_, 4))], loc="lower right")
+        fig.tight_layout()
+        fig.savefig(figures_path + "figure_f1history_" + curr_eval.split("history_")[-1].split(".pkl")[0] + ".png", dpi=300)
+        if eval(config["Bayes"]["show_figure"]):
+            plt.show()
 
     print("Finished eval!")
     exit()

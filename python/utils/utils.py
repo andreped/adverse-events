@@ -5,6 +5,7 @@ import numpy as np
 import re
 from tqdm import tqdm
 from skopt.callbacks import TimerCallback
+from sklearn.metrics import precision_recall_fscore_support
 
 
 # https://github.com/scikit-optimize/scikit-optimize/issues/674
@@ -15,6 +16,11 @@ class TQDMCallback(object):
     def __call__(self, res):
         self._bar.update()
 
+
+def get_f1(x, labels=None):
+    if labels is None:
+        raise ValueError
+    return precision_recall_fscore_support(x[:, 0], x[:, 1], labels=labels, average='macro', zero_division=0)[2]
 
 
 def get_class_weights(y):
