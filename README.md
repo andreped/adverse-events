@@ -9,11 +9,11 @@ This repository contains code for building machine learning models for extractin
 1) Clone repo:
 ```
 git clone https://github.com/andreped/adverse-events.git
-cd adverse-events
 ```
 
 2) Create virtual environment, activate it, and install dependencies:
 ```
+cd adverse-events/python
 virtualenv -ppython3 venv
 source venv/bin/activate
 pip install -r /path/to/requirements.txt
