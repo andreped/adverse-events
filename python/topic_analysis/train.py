@@ -42,7 +42,6 @@ raw_data_path = os.getcwd() + "/../data/2020_03_04_Uttrekk_kateter_fra_2015_uten
 annotated_data_path = os.getcwd() + "/../data/AE_annotated_labeled_Hel_and_Manual_merged_category_20210617_115324.csv"
 save_model_path = os.getcwd() + "/../output/models/"
 history_path = os.getcwd() + "/../output/history/"
-datasets_path = os.getcwd() + "/../output/datasets/"
 figures_path = os.getcwd() + "/../output/figures/"
 
 data_raw = pd.read_csv(raw_data_path)

@@ -35,7 +35,6 @@ negative_data_path = os.path.abspath(os.getcwd() + "/../data/AE_data/EQS_files/"
 positive_data_path = os.path.abspath(os.getcwd() + "/../data/AE_data/2020_03_04_Uttrekk_kateter_fra_2015_uten_id.csv")
 save_model_path = os.path.abspath("../output/models/") + "/"
 history_path = os.path.abspath("../output/history/") + "/"
-datasets_path = os.path.abspath("../output/datasets/") + "/"
 
 data = pd.read_csv(positive_data_path)
 
