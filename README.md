@@ -67,10 +67,6 @@ Different parameters relevant for the analysis, building of models, evaluation, 
 |   |   |   +--- model_some_run_name1.h5
 |   |   |   +--- model_some_run_name2.h5
 |   |   |   +--- [...]
-|   |   +-- datasets/
-|   |   |   +--- preprocessed_dataset1.h5
-|   |   |   +--- preprocessed_dataset2.h5
-|   |   |   +--- [...]
 |   |   +-- figures/
 |   |   |   +--- figure_some_result1.png
 |   |   |   +--- figure_some_result2.png
