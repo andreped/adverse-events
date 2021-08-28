@@ -4,11 +4,10 @@
 
 This repository contains the code used for a manuscript submitted to the [IEEE International Conference on Bioinformatics and Biomedicine (BIBM) 2021](http://ieeebibm.org/BIBM2021/):
 ```
-@ARTICLE{-,
+@ARTICLE{,
 AUTHOR = {Yan, Melissa Y. and Høvik, Lise Husby and Pedersen, André and Gustad, Lise Tuset and Nytrø, Øystein},
 TITLE = {Preliminary Processing and Analysis of an Adverse Event Dataset for Detecting Sepsis-Related Events},
-YEAR = {2021}
-}
+YEAR = {2021}}
 ```
 
 ### Usage:
@@ -36,42 +35,20 @@ Different parameters relevant for the analysis, building of models, evaluation, 
 
 ### Project structure
 
-```
-+-- {adverse-events}/
-|   +-- python/
-|   |   +-- multi-class/
-|   |   |   +-- train.py
-|   |   |   +-- [...]
-|   |   +-- topic-analysis/
-|   |   |   +-- train.py
-|   |   |   +-- [...]
-|   |   +-- utils/
-|   |   |   +-- losses.py
-|   |   |   +-- [...]
-|   |   +-- [...]
-|   +-- data/
-|   |   +-- AE_data/
-|   |   |   +-- EQS_files/
-|   |   |   |   +-- 1.txt
-|   |   |   |   +-- 2.txt
-|   |   |   |   +-- [...]
-|   |   +-- file_with_all_notes.csv
-|   |   +-- file_with_annotated_notes.csv
-|   |   +-- [...]
-|   +-- output/
-|   |   +-- history/
-|   |   |   +--- history_some_run_name1.txt
-|   |   |   +--- history_some_run_name2.txt
-|   |   |   +--- [...]
-|   |   +-- models/
-|   |   |   +--- model_some_run_name1.h5
-|   |   |   +--- model_some_run_name2.h5
-|   |   |   +--- [...]
-|   |   +-- figures/
-|   |   |   +--- figure_some_result1.png
-|   |   |   +--- figure_some_result2.png
-|   |   |   +--- [...]
-```
+    ├── adverse-events
+        ├── python
+        │   ├── multi-class
+        │   ├── topic-analysis
+        │   ├── utils
+        │   └── ...
+        ├── data
+        │   ├── EQS_files
+        │   ├── file-with-all-notes.csv
+        │   └── file_with_annotated_notes.csv
+        └── output
+            ├── history
+            ├── models
+            └── figures
 
 ------
 Made with :heart: and Python
