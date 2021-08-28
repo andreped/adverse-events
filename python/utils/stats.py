@@ -11,7 +11,6 @@ def BCa_interval_macro_metric(X, func, B=1000, q=0.975):
     X_boot = X[order_boot]
         
     # bootstrap
-    #x_boot = np.random.choice(x, size=(B, len(x)), replace=True)
     theta_hat_boot = np.array([func(X_boot[i]) for i in range(X_boot.shape[0])])
 
     # 1) find jackknife estimates

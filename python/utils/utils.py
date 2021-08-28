@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import re
 from tqdm import tqdm
-from skopt.callbacks import TimerCallback
 from sklearn.metrics import precision_recall_fscore_support
 
 

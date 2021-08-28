@@ -38,23 +38,13 @@ history_path = os.path.abspath("../output/history/") + "/"
 datasets_path = os.path.abspath("../output/datasets/") + "/"
 
 data = pd.read_csv(positive_data_path)
-# Preview the first 5 lines of the loaded data
-print(data.head())
-print(list(data.keys()))
 
 X_orig = data["Hendelsesbeskrivelse"]
 Y_orig = data['Klassifisering av alvorlighetsgrad']
 
-print(X_orig)
-print(Y_orig)
-
-print(Y_orig.unique())
-
-hist = Y_orig.hist()
-
 # histogram
+hist = Y_orig.hist()
 hist_ = Y_orig.value_counts()
-print("hist:\n\n ", hist_)
 names = list(hist_.keys())
 
 # work with numpy arrays (because it is way easier)
@@ -73,19 +63,14 @@ Y_orig = Y_orig[filter_]
 
 new_names = list(set(Y_orig))
 
-print(Y_orig)
-
 # categorical to numerical
 Y = LabelEncoder().fit_transform(Y_orig)
 
 # convert to numpy arrays for simplicity
 X = np.asarray(X_orig)
 
-### Preprocess
-
-token_m = "counter"  # {"hashing", "counter", "tfidf", "keras"}
-
 # extract features using simple word count
+token_m = "counter"  # {"hashing", "counter", "tfidf", "keras"}
 if token_m == "hashing":
     vectorizer = HashingVectorizer(n_features=5000, lowercase=True, strip_accents="unicode", analyzer="word")  # CountVectorizer(max_features=5000) #HashingVectorizer(n_features=5000) # #TfidfVectorizer(max_features=5000)
     X = vectorizer.fit_transform(X)
@@ -109,21 +94,12 @@ nb_feats = X.shape[1]
 # calculate class weights
 class_weights = compute_class_weight("balanced", np.unique(Y), Y)
 Y_before = Y.copy()
-
-print(class_weights)
-print(np.histogram(Y_before))
-
 class_weights = {i: w for i, w in enumerate(class_weights)}
-
 #class_weights = get_class_weights(Y)
-
 #class_weight = {0: 10, 1: 1, 2: 1, 3: 5, 4: 10}
 
 # one-hot encode GT
-print(np.unique(Y), Y.dtype)
 Y = np.eye(nb_classes)[Y]
-
-print(Y)
 
 # shuffle data
 order_ = np.asarray(range(len(Y)))
@@ -149,25 +125,25 @@ print("Size of each set: ")
 print(len(Y_train), len(Y_val), len(Y_test))
 
 ### create model
-
 # model
 inputs = Input(shape=(nb_feats,))
 x = Dense(30)(inputs)  # x
 x = BatchNormalization()(x)
 x = Dropout(0.5)(x)
 x = Activation("relu")(x)
-#x = Dense(10, activation="relu")(inputs)
-#x = BatchNormalization()(x)
-#x = Dropout(0.5)(x)
-#x = Activation("relu")(x)
+'''
+x = Dense(10, activation="relu")(inputs)
+x = BatchNormalization()(x)
+x = Dropout(0.5)(x)
+x = Activation("relu")(x)
+'''
 x = Dense(nb_classes, activation="softmax")(x)
 model = Model(inputs=inputs, outputs=x)
 
 # keras deep embedding instead of preprocessing?
 '''
 embedding_dim = 50
-vocab_size =
-
+# vocab_size = None
 model = Sequential()
 model.add(Embedding(input_dim=vocab_size,
                     output_dim=embedding_dim,
@@ -229,9 +205,3 @@ print("--- VAL ---")
 print(classification_report(np.argmax(Y_val, axis=-1), np.argmax(model.predict(X_val), axis=-1), target_names=new_names))
 print("--- TEST ---")
 print(classification_report(np.argmax(Y_test, axis=-1), np.argmax(model.predict(X_test), axis=-1), target_names=new_names))
-
-
-
-
-
-
