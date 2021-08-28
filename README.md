@@ -12,7 +12,7 @@ git clone https://github.com/andreped/adverse-events.git
 cd adverse-events
 ```
 
-2) Create virtual environment and intall dependencies:
+2) Create virtual environment, activate it, and install dependencies:
 ```
 virtualenv -ppython3 venv
 source venv/bin/activate
@@ -23,7 +23,7 @@ pip install -r /path/to/requirements.txt
 
 4) Run scripts for training and evaluating different classifier models:
 ```
-python3 main.py misc/test-bayes.ini
+python3 main.py misc/default-params.ini
 ```
 Different parameters relevant for the analysis, building of models, evaluation, plotting results, and similar, may be modified in the INI-file.
 
@@ -37,7 +37,6 @@ Different parameters relevant for the analysis, building of models, evaluation, 
 |   |   |   +-- [...]
 |   |   +-- topic-analysis/
 |   |   |   +-- train.py
-|   |   |   +-- train_bayes.py
 |   |   |   +-- [...]
 |   |   +-- utils/
 |   |   |   +-- losses.py
@@ -68,5 +67,4 @@ Different parameters relevant for the analysis, building of models, evaluation, 
 ```
 
 ------
-
 Made with :heart: and Python
