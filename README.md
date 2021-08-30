@@ -2,7 +2,7 @@
 
 [![license](https://img.shields.io/github/license/DAVFoundation/captain-n3m0.svg?style=flat-square)](https://github.com/DAVFoundation/captain-n3m0/blob/master/LICENSE)
 
-This repository contains the code used for a manuscript submitted to the [IEEE International Conference on Bioinformatics and Biomedicine (BIBM) 2021](http://ieeebibm.org/BIBM2021/):
+This repository contains the source code related to the manuscript submitted to the [IEEE International Conference on Bioinformatics and Biomedicine (BIBM) 2021](http://ieeebibm.org/BIBM2021/):
 ```
 @ARTICLE{,
 AUTHOR = {Yan, Melissa Y. and Høvik, Lise Husby and Pedersen, André and Gustad, Lise Tuset and Nytrø, Øystein},
