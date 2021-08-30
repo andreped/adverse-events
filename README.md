@@ -10,6 +10,8 @@ TITLE = {Preliminary Processing and Analysis of an Adverse Event Dataset for Det
 YEAR = {2021}}
 ```
 
+See [here](https://github.com/andreped/adverse-events/releases/tag/v1.0) to download the exact version of the source code used in the publication.
+
 ### Usage:
 
 1) Clone repo:
