@@ -4,7 +4,7 @@
 
 This repository contains the source code related to the manuscript **accepted** to the [IEEE International Conference on Bioinformatics and Biomedicine (IEEE BIBM 2021)](http://ieeebibm.org/BIBM2021/):
 ```
-@ARTICLE{yan2021adversevents,
+@ARTICLE{yan2021sepsis,
 AUTHOR = {Yan, Melissa Y. and Høvik, Lise Husby and Pedersen, André and Gustad, Lise Tuset and Nytrø, Øystein},
 TITLE = {Preliminary Processing and Analysis of an Adverse Event Dataset for Detecting Sepsis-Related Events},
 YEAR = {2021}}
