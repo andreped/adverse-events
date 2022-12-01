@@ -31,7 +31,7 @@ Different parameters relevant for the analysis, building of models, evaluation, 
 
 ### Project structure
 
-    ├── adverse-events
+    └── adverse-events
         ├── python
         │   ├── multi-class
         │   ├── topic-analysis
