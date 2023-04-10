@@ -9,24 +9,19 @@ A PDF of the published paper can be accessed [here](https://ntnuopen.ntnu.no/ntn
 ## Usage
 
 1) Clone repo:
-```
-git clone https://github.com/andreped/adverse-events.git
-```
+    > git clone https://github.com/andreped/adverse-events.git
 
 2) Create virtual environment, activate it, and install dependencies:
-```
-cd adverse-events/python
-virtualenv -ppython3 venv --clear
-source venv/bin/activate
-pip install -r /path/to/requirements.txt
-```
+    > cd adverse-events/python  
+    > virtualenv -ppython3 venv --clear  
+    > source venv/bin/activate  
+    > pip install -r /path/to/requirements.txt
 
 3) Create the project structure as defined [below](https://github.com/andreped/adverse-events#project-structure).
 
 4) Run scripts for training and evaluating different classifier models:
-```
-python main.py misc/default-params.ini
-```
+    > python main.py misc/default-params.ini
+
 Different parameters relevant for the analysis, building of models, evaluation, plotting results, and similar, may be modified in the INI-file.
 
 ## Project structure
