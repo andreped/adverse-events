@@ -6,7 +6,7 @@ This repository contains the source code related to the manuscript _"Preliminary
 
 A PDF of the published paper can be accessed [here](https://ntnuopen.ntnu.no/ntnu-xmlui/bitstream/handle/11250/2979827/B579_9996.pdf?sequence=2&isAllowed=y). See [here](https://github.com/andreped/adverse-events/releases/tag/v1.0) to download the exact version of the source code used in the publication (v1.0).
 
-### Usage:
+### Usage
 
 1) Clone repo:
 ```
@@ -46,7 +46,7 @@ Different parameters relevant for the analysis, building of models, evaluation, 
             ├── models
             └── figures
 
-### Acknowledgements
+### How to cite
 
 If you use parts of the source code in your research, please, cite this publication:
 
