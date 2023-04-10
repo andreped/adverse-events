@@ -52,10 +52,11 @@ If you use parts of the source code in your research, please, cite this publicat
 
 ```
 @INPROCEEDINGS{yan2021sepsis,
-author={Yan, Melissa Y. and Høvik, Lise Husby and Pedersen, André and Gustad, Lise Tuset and Nytrø, Øystein},
-booktitle={2021 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)},
-title={Preliminary Processing and Analysis of an Adverse Event Dataset for Detecting Sepsis-Related Events},
-year={2021},
-pages={1605-1610},
-doi={10.1109/BIBM52615.2021.9669410}}
+    author={Yan, Melissa Y. and Høvik, Lise Husby and Pedersen, André and Gustad, Lise Tuset and Nytrø, Øystein},
+    booktitle={2021 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)},
+    title={Preliminary Processing and Analysis of an Adverse Event Dataset for Detecting Sepsis-Related Events},
+    year={2021},
+    pages={1605-1610},
+    doi={10.1109/BIBM52615.2021.9669410}
+}
 ```
