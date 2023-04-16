@@ -6,7 +6,7 @@ This repository contains the source code related to the manuscript _"Preliminary
 
 A PDF of the published paper can be accessed [here](https://ntnuopen.ntnu.no/ntnu-xmlui/bitstream/handle/11250/2979827/B579_9996.pdf?sequence=2&isAllowed=y). See [here](https://github.com/andreped/adverse-events/releases/tag/v1.0) to download the exact version of the source code used in the publication (v1.0).
 
-## Usage
+## [Usage](https://github.com/andreped/adverse-events#usage)
 
 1) Clone repo:
     > git clone https://github.com/andreped/adverse-events.git
@@ -24,7 +24,7 @@ A PDF of the published paper can be accessed [here](https://ntnuopen.ntnu.no/ntn
 
 Different parameters relevant for the analysis, building of models, evaluation, plotting results, and similar, may be modified in the INI-file.
 
-## Project structure
+## [Project structure](https://github.com/andreped/adverse-events#project-structure)
 
     └── adverse-events
         ├── python
@@ -41,7 +41,7 @@ Different parameters relevant for the analysis, building of models, evaluation, 
             ├── models
             └── figures
 
-## How to cite
+## [How to cite](https://github.com/andreped/adverse-events#how-to-cite)
 
 If you use parts of the source code in your research, please, cite this publication:
 
